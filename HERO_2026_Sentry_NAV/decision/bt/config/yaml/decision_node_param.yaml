@@ -1,0 +1,6 @@
+decision_node:
+  ros__parameters:
+    xml_config_path: "/home/dji/hero2026_-sentry/src/decision/bt/config/xml/RMUC_26_5_29.xml"
+    is_red_team_: false
+    cruise_state: 0
+    global_total_points: 4

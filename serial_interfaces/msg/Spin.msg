@@ -1,0 +1,2 @@
+bool if_spin
+bool unregular_spin

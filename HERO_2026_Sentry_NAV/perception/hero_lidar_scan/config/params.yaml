@@ -1,0 +1,26 @@
+hero_lidar_scan_node:
+  ros__parameters:
+    # 话题配置
+    lidar1_topic: "/livox/fused_cloud"  # 左雷达
+    lidar2_topic: "livox/lidar_192_168_1_126"  # 右雷达
+    odom_topic: "/odin1/odometry_highfreq"
+    fused_cloud_topic: "/livox/cloud_scans"
+
+    # 雷达1外参 (相对于base_link)
+    lidar1_x: 0.0
+    lidar1_y: 0.217
+    lidar1_z: 0.121
+    lidar1_roll: 0.0
+    lidar1_pitch: 0.61086
+    lidar1_yaw: 1.57079
+
+    # 雷达2外参 (相对于base_link)
+    lidar2_x: 0.0
+    lidar2_y: -0.217
+    lidar2_z: 0.121
+    lidar2_roll: 0.0
+    lidar2_pitch: 0.61086
+    lidar2_yaw: -1.57079
+
+    time_offset: 0.0
+    filter_size: 0.05

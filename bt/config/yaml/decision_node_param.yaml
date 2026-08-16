@@ -1,0 +1,7 @@
+decision_node:
+  ros__parameters:
+    # xml_config_path 由 launch 注入(find-pkg-share bt)/config/xml/<FILE>.xml
+    xml_config_path: ""
+    is_red_team_: false
+    cruise_state: 0
+    global_total_points: 4

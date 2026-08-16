@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <!-- 主行为树 -->
+  <!-- 按时间驻守+回家补给 -->
+  <!-- 巡逻点数：2 -->
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+        <ReactiveSequence>
+            <Nav x="2.95" y="4.60" />
+            <LogMessage message="四分钟外"/>
+        </ReactiveSequence>
+        <ReactiveSequence>
+            <Guardian guard_duration = "5.0"/>
+        </ReactiveSequence>    
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="RefereeSubscriber" editable="true">
+      <input_port name="topic"/>
+      <output_port name="competition_type"/>
+      <output_port name="competition_stage"/>
+      <output_port name="stage_time"/>
+      <output_port name="robot_id"/>
+      <output_port name="bullet_17mm"/>
+      <output_port name="current_hp"/>
+    </Action>
+    <Action ID="RadarSubscriber" editable="true">
+      <output_port name="robot_1_x"/>
+      <output_port name="robot_1_y"/>
+    </Action>
+    <Action ID="Nav" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+    </Action>
+    <Action ID="Guardian" editable="true">
+      <input_port name="guard_duration"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>
+

@@ -1,0 +1,14 @@
+lidar_merge_node:
+  ros__parameters:
+    lidar1_topic: "livox/lidar_192_168_1_193"
+    lidar2_topic: "livox/lidar_192_168_1_153"
+    lidar1_to_lidar2_x: -0.338253
+    lidar1_to_lidar2_y: -0.031027
+    lidar1_to_lidar2_z: -0.257814
+    lidar1_to_lidar2_roll: 0.0104714
+    lidar1_to_lidar2_pitch: 1.20434
+    lidar1_to_lidar2_yaw: -3.13295
+    ori_x: -0.1713
+    ori_y: 0.0
+    ori_z: -0.1
+    blind: 0.15

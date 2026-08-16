@@ -1,0 +1,111 @@
+<!-- <?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  
+  <!-- ========== 子树定义 ========== -->
+  <BehaviorTree ID="PreCheckSubtree">
+    <Sequence>
+      <!-- 赛前检查 -->
+      <RefereeSubscriber topic="referee_msg"
+                        competition_type="{competition_type}"
+                        competition_stage="{competition_stage}"
+                        stage_remaining_time="{stage_remaining_time}"
+                        robot_id="{robot_id}"
+                        allow_bullet_17mm="{allow_bullet_17mm}"
+                        current_hp="{current_hp}"/>
+
+      <!-- 比赛类型检查 -->
+      <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+      <CheckValue value="{competition_type}" expected="4" operator="eq"/>
+      <LogMessage message="比赛类型通过"/>
+
+      <!-- 比赛阶段检查 -->
+      <LogMessage message="检查比赛阶段，比赛阶段为：{competition_stage}"/>
+      <CheckValue value="{competition_stage}" expected="4" operator="eq"/>
+      <LogMessage message="比赛阶段通过，比赛中"/>
+
+      <!-- 剩余时间检查 -->
+      <LogMessage message="剩余比赛时间：{stage_remaining_time}"/>
+      <CheckValue value="{stage_remaining_time}" expected="0" operator="gt"/>
+      <LogMessage message="比赛还有时间，比赛中"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="TimePhaseSubtree">
+    <Fallback>
+      <Sequence>
+        <CheckCountdown remaining_time="{remaining}" 
+                       check_start="{start}" 
+                       check_end="{end}"/>
+        <SubTree ID="HealthDecisionSubtree" 
+                target_x="{target_x}" 
+                target_y="{target_y}" 
+                target_yaw="{target_yaw}"
+                message_prefix="{message_prefix}"/>
+      </Sequence>
+      <!-- 其他时间阶段可以继续添加 -->
+    </Fallback>
+  </BehaviorTree>
+
+  <BehaviorTree ID="HealthDecisionSubtree">
+    <Fallback>
+      <!-- 高血量分支 -->
+      <Sequence>
+        <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+        <LogMessage message="{message_prefix}血量健康，前往占点区"/>
+        <NavigateToPose x="{target_x}" y="{target_y}" yaw="{target_yaw}" 
+                       timeout="60.0" keep_sending="true" 
+                       stage_remaining_time="{stage_remaining_time}"/>
+      </Sequence>
+      <!-- 低血量分支 -->
+      <Sequence>
+        <CheckValue value="{current_hp}" expected="100" operator="le"/>
+        <LogMessage message="{message_prefix}血量不足，返回补给区"/>
+        <NavigateToPose x="0.0" y="0.0" yaw="0" 
+                       timeout="60.0" keep_sending="true" 
+                       stage_remaining_time="{stage_remaining_time}"/>
+      </Sequence>
+    </Fallback>
+  </BehaviorTree>
+
+  <!-- ========== 主行为树 ========== -->
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+      <!-- 执行赛前检查 -->
+      <SubTree ID="PreCheckSubtree"/>
+
+      <!-- 时间阶段决策 -->
+      <Fallback>
+        <SubTree ID="TimePhaseSubtree" 
+                remaining="{stage_remaining_time}"
+                start="300" end="200"
+                target_x="0.5" target_y="2.0" target_yaw="0"
+                message_prefix="[阶段1] "/>
+                
+        <SubTree ID="TimePhaseSubtree" 
+                remaining="{stage_remaining_time}"
+                start="200" end="0"
+                target_x="1.5" target_y="0.0" target_yaw="0"
+                message_prefix="[阶段2] "/>
+      </Fallback>
+    </Sequence>
+  </BehaviorTree>
+
+</root> -->
+
+
+<!-- 主序列（MainTree）
+├─ 赛前检查序列（必须全部成功）
+│  ├─ 订阅裁判数据
+│  ├─ 验证比赛类型=4
+│  ├─ 验证比赛阶段=4
+│  └─ 验证剩余时间>0
+└─ 动态分支选择（Fallback）
+   ├─ 时间段1（300~200秒）
+   │  └─ Fallback
+   │     ├─ 高血量→占点区(0.5,2.0)
+   │     └─ 低血量→补给区(0.0,0.0)
+   └─ 时间段2（200~0秒）
+      └─ Fallback
+         ├─ 高血量→占点区(1.5,2.0)
+         └─ 低血量→补给区(1.0,0.0) -->
+

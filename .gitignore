@@ -1,0 +1,33 @@
+build
+
+devel
+
+install
+
+log/*
+
+.catkin_workspace
+
+.vscode
+
+.cache
+
+__pycache__
+
+*~
+*.pcd
+*.gv
+*.pdf
+
+pb2025_nav_bringup/map/reality/*.yaml
+pb2025_nav_bringup/map/reality/*.pgm
+# 本地 colcon 编译产物
+.colcon/
+
+
+# acados 构建产物(源码入库,产物不提交)
+src/third_party/acados/build/
+src/third_party/acados/lib/
+src/third_party/acados/bin/
+src/third_party/acados/**/__pycache__/
+*.mat

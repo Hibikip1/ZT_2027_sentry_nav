@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+    <!-- 主行为树 -->
+    <BehaviorTree ID="MainTree">
+        <Sequence>
+            <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+            <CheckValue value="{competition_type}" expected="1" operator="eq"/>
+            <ReactiveFallback>
+                <!-- 阶段五：比赛结束退出 -->
+                <SubTree ID="Stage5_GameOver" _autoremap="true"/>
+
+                <!-- 阶段四：比赛进行中的战斗逻辑 -->
+                <SubTree ID="Stage4_Combat" _autoremap="true"/>
+            </ReactiveFallback>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="Stage4_Combat">
+        <Sequence>
+            <CheckValue value="{competition_stage}" expected="4" operator="eq"/>
+            <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+            <AutoAimManager targets='[
+                                {"type":"1","priority":30,"distance":50},
+                                {"type":"2","priority":30,"distance":50},
+                                {"type":"3","priority":40,"distance":50},
+                                {"type":"SENTRY","priority":30,"distance":50},
+                                {"type":"OUTPOST","priority":100,"distance":50},
+                                {"type":"BASE","priority":1,"distance":50}]'/>
+
+            <ReactiveFallback>
+                <!-- 优先级1（最高）：生存撤退（低血量/低弹丸） -->
+                <!-- 如果满足低血量条件，它将抢占并打断后面任何的高血量战术节点 -->
+                <SubTree ID="DangerRetreat" _autoremap="true"/>
+
+                <!-- 优先级2：高血量/充足弹丸战术分配 -->
+                <SubTree ID="HealthTactics" _autoremap="true"/>
+            </ReactiveFallback>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="DangerRetreat">
+        <Sequence>
+            <Fallback>
+                <CheckValue value="{current_hp}" expected="100" operator="le"/>
+                <CheckValue value="{bullet_17mm}" expected="20" operator="le"/>
+            </Fallback>
+            <Sequence>
+                <ReactiveSequence>
+                    <Nav x="0.0" y="0.0" />
+                </ReactiveSequence>
+                <ReactiveSequence>
+                    <LogMessage message="等待血量恢复:{current_hp}"/>
+                    <Inverter>
+                        <Sequence>
+                            <CheckValue value="{current_hp}" expected="300" operator="gt"/>
+                            <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                        </Sequence>
+                    </Inverter>
+                    <Guardian guard_duration="15.0"/>
+                </ReactiveSequence>
+            </Sequence>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="HealthTactics">
+        <Sequence>
+            <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+            <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+            <LogMessage message="血量健康，前往占点区"/>
+
+            <!-- 核心：利用 ReactiveFallback 排布日常/突发任务优先级 -->
+            <!-- 从上到下优先级依次降低 -->
+            <ReactiveFallback>
+                <!-- P1: 触发式信号 -->
+                <SubTree ID="TriggeredTask" _autoremap="true"/>
+
+                <!-- P2: 能量机关 -->
+                <SubTree ID="RuneTasks" _autoremap="true"/>
+
+                <!-- P3: 被动防守（前哨站存活） -->
+                <SubTree ID="DefenseOutpost" _autoremap="true"/>
+
+                <!-- P4: 主动巡航（前哨站摧毁后） -->
+                <SubTree ID="CruiseTask" _autoremap="true"/>
+            </ReactiveFallback>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="TriggeredTask">
+        <Sequence>
+            <CheckValue value="{trigger_flag}" expected="1" operator="eq"/>
+            <LogMessage message="收到触发式消息，前往目标点并驻守"/>
+            <ReactiveSequence>
+                <Nav x="{trigger_point_x}" y="{trigger_point_y}" />
+            </ReactiveSequence>
+            <ReactiveSequence>
+                <LogMessage message="到达触发点，开始驻守并准备清理标志位"/>
+                <Guardian guard_duration="8.0"/>
+            </ReactiveSequence>
+            <ClearFlagNode flag_name="trigger_flag" expected_value="0"/>
+            <LogMessage message="触发式任务完成，标志位已归零"/>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="RuneTasks">
+        <Sequence>
+            <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+            <Fallback>
+                <!-- 小能量机关 1 -->
+                <Sequence>
+                    <CheckValue value="{small_rune_flag_1}" expected="0" operator="eq"/>
+                    <CheckValue value="{stage_time}" expected="420" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="330" operator="gt"/>
+                    <LogMessage message="尝试激活第一次小能量机关"/>
+                    <ReactiveSequence>
+                        <Nav x="2.0" y="0.0" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                        <PublishNavOutput target_tf_name="rune" mode="2"/>
+                        <RuneStateMachine flag_name="small_rune_flag_1" status_key="small_energy_state" target_state="1"/>
+                    </ReactiveSequence>
+                </Sequence>
+
+                <!-- 小能量机关 2 -->
+                <Sequence>
+                    <CheckValue value="{small_rune_flag_2}" expected="0" operator="eq"/>
+                    <CheckValue value="{stage_time}" expected="330" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="240" operator="gt"/>
+                    <LogMessage message="尝试激活第二次小能量机关"/>
+                    <ReactiveSequence>
+                        <Nav x="1.0" y="1.0" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                        <PublishNavOutput target_tf_name="rune" mode="2"/>
+                        <RuneStateMachine flag_name="small_rune_flag_2" status_key="small_energy_state" target_state="1"/>
+                    </ReactiveSequence>
+                </Sequence>
+
+                <!-- 大能量机关 1 -->
+                <Sequence>
+                    <CheckValue value="{big_rune_flag_1}" expected="0" operator="eq"/>
+                    <CheckValue value="{stage_time}" expected="240" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="150" operator="gt"/>
+                    <LogMessage message="尝试激活第一次大能量机关"/>
+                    <ReactiveSequence>
+                        <Nav x="1.0" y="1.0" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                        <PublishNavOutput target_tf_name="rune" mode="3"/>
+                        <RuneStateMachine flag_name="big_rune_flag_1" status_key="big_energy_state" target_state="1"/>
+                    </ReactiveSequence>
+                </Sequence>
+
+                <!-- 大能量机关 2 -->
+                <Sequence>
+                    <CheckValue value="{big_rune_flag_2}" expected="0" operator="eq"/>
+                    <CheckValue value="{stage_time}" expected="150" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="90" operator="gt"/>
+                    <LogMessage message="尝试激活第二次大能量机关"/>
+                    <ReactiveSequence>
+                        <Nav x="1.0" y="1.0" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                        <PublishNavOutput target_tf_name="rune" mode="3"/>
+                        <RuneStateMachine flag_name="big_rune_flag_2" status_key="big_energy_state" target_state="1"/>
+                    </ReactiveSequence>
+                </Sequence>
+
+                <!-- 大能量机关 3 -->
+                <Sequence>
+                    <CheckValue value="{big_rune_flag_3}" expected="0" operator="eq"/>
+                    <CheckValue value="{stage_time}" expected="90" operator="le"/>
+                    <LogMessage message="尝试激活第三次大能量机关"/>
+                    <ReactiveSequence>
+                        <Nav x="1.0" y="1.0" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                        <PublishNavOutput target_tf_name="rune" mode="3"/>
+                        <RuneStateMachine flag_name="big_rune_flag_3" status_key="big_energy_state" target_state="1"/>
+                    </ReactiveSequence>
+                </Sequence>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="DefenseOutpost">
+        <Sequence>
+            <CheckValue value="{enemy_outpost_status}" expected="0" operator="eq"/>
+            <ReactiveSequence>
+                <Nav x="1.0" y="0.0" />
+            </ReactiveSequence>
+            <ReactiveSequence>
+                <PublishNavOutput target_tf_name="outpost" mode="1"/>
+                <Guardian guard_duration="20.0"/>
+            </ReactiveSequence>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="CruiseTask">
+        <Sequence>
+            <CheckValue value="{enemy_outpost_status}" expected="0" operator="gt"/>
+            <Fallback>
+                <!-- 巡航点0 -->
+                <Sequence>
+                    <CheckValue value="{cruise_state}" expected="0" operator="eq"/>
+                    <ReactiveSequence>
+                        <Nav x="15.1" y="2.07" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                        <Guardian guard_duration="10.0"/>
+                    </ReactiveSequence>
+                    <CruiserStateManager cruise_state_in="{cruise_state}" cruise_state_out="{cruise_state}" total_points="{global_total_points}" />
+                </Sequence>
+
+                <!-- 巡航点1 -->
+                <Sequence>
+                    <CheckValue value="{cruise_state}" expected="1" operator="eq"/>
+                    <ReactiveSequence>
+                        <Nav x="1.0" y="0.0" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                        <Guardian guard_duration="10.0"/>
+                    </ReactiveSequence>
+                    <CruiserStateManager cruise_state_in="{cruise_state}" cruise_state_out="{cruise_state}" total_points="{global_total_points}" />
+                </Sequence>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="Stage5_GameOver">
+        <Sequence>
+            <CheckValue value="{competition_stage}" expected="5" operator="eq"/>
+            <LogMessage message="阶段(5)：比赛结束。开始重置标志位..."/>
+            <ClearFlagNode flag_name="small_rune_flag_1" expected_value="0"/>
+            <ClearFlagNode flag_name="small_rune_flag_2" expected_value="0"/>
+            <ClearFlagNode flag_name="big_rune_flag_1" expected_value="0"/>
+            <ClearFlagNode flag_name="big_rune_flag_2" expected_value="0"/>
+            <ClearFlagNode flag_name="big_rune_flag_3" expected_value="0"/>
+            <ClearFlagNode flag_name="trigger_flag" expected_value="0"/>
+            <!-- 安全打断回家 -->
+            <ReactiveSequence>
+                <Nav x="0.0" y="0.0" />
+            </ReactiveSequence>
+            <ReactiveSequence>
+                <Guardian guard_duration="10.0"/>
+            </ReactiveSequence>
+        </Sequence>
+    </BehaviorTree>
+
+    <!-- Description of Node Models (used by Groot) -->
+    <TreeNodesModel>
+        <Action ID="RefereeSubscriber" editable="true">
+            <input_port name="topic"/>
+            <output_port name="competition_type"/>
+            <output_port name="competition_stage"/>
+            <output_port name="stage_time"/>
+            <output_port name="robot_id"/>
+            <output_port name="bullet_17mm"/>
+            <output_port name="current_hp"/>
+        </Action>
+        <Action ID="RadarSubscriber" editable="true">
+            <output_port name="robot_1_x"/>
+            <output_port name="robot_1_y"/>
+        </Action>
+        <Action ID="Nav" editable="true">
+            <input_port name="x"/>
+            <input_port name="y"/>
+        </Action>
+        <Action ID="PublishNavOutput" editable="true">
+            <input_port name="target_tf_name"/>
+            <input_port name="mode"/>
+        </Action>
+        <Action ID="RuneStateMachine" editable="true">
+            <input_port name="flag_name"/>
+            <input_port name="status_key"/>
+            <input_port name="target_state"/>
+        </Action>
+        <Action ID="ClearFlagNode" editable="true">
+            <input_port name="flag_name"/>
+            <input_port name="expected_value"/>
+        </Action>
+        <Action ID="Guardian" editable="true">
+            <input_port name="guard_duration"/>
+        </Action>
+    </TreeNodesModel>
+
+</root>
+
+
+

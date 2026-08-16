@@ -1,0 +1,23 @@
+lidar_merge_node:
+  ros__parameters:
+    lidar1_topic: "livox/lidar_192_168_1_193"
+    lidar2_topic: "livox/lidar_192_168_1_126"
+    lidar1_to_odin1_x: -0.186846
+    lidar1_to_odin1_y: 0.20343
+    lidar1_to_odin1_z: -0.0506747
+    lidar1_to_odin1_roll: -0.00170351
+    lidar1_to_odin1_pitch: 0.593192
+    lidar1_to_odin1_yaw: 1.56666
+
+    lidar2_to_odin1_x: -0.116295
+    lidar2_to_odin1_y: -0.239434
+    lidar2_to_odin1_z: -0.0407141
+    lidar2_to_odin1_roll: 0.010476
+    lidar2_to_odin1_pitch: 0.622282
+    lidar2_to_odin1_yaw: -1.55943
+
+
+    ori_x: -0.1713
+    ori_y: 0.0
+    ori_z: -0.1
+    blind: 0.15

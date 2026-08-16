@@ -1,0 +1,5 @@
+radar_pub:
+  ros__parameters:
+    # 敌方1号英雄机器人位置
+    robot_1_x: 7.0
+    robot_1_y: 0.0

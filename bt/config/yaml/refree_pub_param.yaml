@@ -1,0 +1,16 @@
+refree_pub:
+  ros__parameters:
+    competition_type: 1
+    competition_stage: 1 
+    stage_time: 410
+    dart_target: 0
+
+    small_energy_state: 0
+    big_energy_state: 0
+
+    current_hp: 400
+    is_reached: true
+    
+    robot_id: 7
+    current_hp: 600
+    bullet_17mm: 400

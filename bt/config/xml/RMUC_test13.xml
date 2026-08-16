@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <!-- 主行为树 -->
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+      <Sequence>
+        <!-- 比赛类型检查 -->
+        <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+        <CheckValue value="{competition_type}" expected="1" operator="eq"/>
+        <LogMessage message="比赛类型通过"/>
+
+        <!-- 比赛阶段检查 -->
+        <LogMessage message="检查比赛阶段，比赛阶段为：{competition_stage}"/>
+        <CheckValue value="{competition_stage}" expected="4" operator="eq"/>
+        <LogMessage message="比赛阶段通过，比赛中"/>
+        <!-- 剩余时间检查 -->
+        <LogMessage message="剩余比赛时间：{stage_time}"/>
+        <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+        <LogMessage message="比赛还有时间，比赛中"/>
+        <AutoAimManager targets='[
+                                      {"type":"1","priority":30,"distance":50},
+                                      {"type":"2","priority":30,"distance":50},
+                                      {"type":"3","priority":40,"distance":50},
+                                      {"type":"SENTRY","priority":30,"distance":50},
+                                      {"type":"OUTPOST","priority":100,"distance":50},
+                                      {"type":"BASE","priority":1,"distance":50}]'
+                           />
+      </Sequence>
+
+      <Sequence>
+        <Fallback>          <!-- 血量分支判断-->
+          <!-- 高血量分支 -->
+          <Sequence>
+            <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+            <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+            <LogMessage message="血量健康，前往占点区"/>
+            <Fallback>
+              <!-- 小能量机关和大能量机关的激活 -->
+              <Fallback>
+                <Sequence>
+                  <CheckValue value="{small_rune_flag_1}" expected="0" operator="eq"/>
+                  <CheckValue value="{stage_time}" expected="420" operator="le"/>
+                  <CheckValue value="{stage_time}" expected="330" operator="gt"/>
+                  <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                  <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                  <LogMessage message="尝试激活第一次小能量机关"/>
+                  <ReactiveSequence>
+                    <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                    <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                    <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                    <Nav x="7.03" y="-3.51" />
+                  </ReactiveSequence>
+                  <!-- 导航完成，开启小能量机关 -->
+                  <ReactiveSequence>
+                    <!-- PublishNavOutput node mode 2: Small Energy -->
+                    <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                    <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                    <PublishNavOutput target_tf_name="rune" mode="2"/>
+                    <RuneStateMachine flag_name="small_rune_flag_1" status_key="small_energy_state" target_state="1"/>
+                  </ReactiveSequence>
+                </Sequence>
+
+                <Sequence>
+                  <CheckValue value="{small_rune_flag_2}" expected="0" operator="eq"/>
+                  <CheckValue value="{stage_time}" expected="330" operator="le"/>
+                  <CheckValue value="{stage_time}" expected="240" operator="gt"/>
+                  <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                  <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                  <LogMessage message="尝试激活第二次小能量机关"/>
+                  <ReactiveSequence>
+                    <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                    <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                    <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                    <Nav x="7.03" y="-3.51" />
+                  </ReactiveSequence>
+                  <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="330" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="240" operator="gt"/>
+                    <PublishNavOutput target_tf_name="rune" mode="2"/>
+                    <RuneStateMachine flag_name="small_rune_flag_2" status_key="small_energy_state" target_state="1"/>
+                  </ReactiveSequence>
+                </Sequence>
+
+                <Sequence>
+                  <CheckValue value="{big_rune_flag_1}" expected="0" operator="eq"/>
+                  <CheckValue value="{stage_time}" expected="240" operator="le"/>
+                  <CheckValue value="{stage_time}" expected="150" operator="gt"/>
+                  <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                  <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                  <LogMessage message="尝试激活第一次大能量机关"/>
+                  <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="240" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="150" operator="gt"/>
+                    <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                    <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                    <Nav x="7.03" y="-3.51" />
+                  </ReactiveSequence>
+                  <ReactiveSequence>
+                    <!-- mode 3: Large Energy -->
+                    <CheckValue value="{stage_time}" expected="240" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="150" operator="gt"/>
+                    <PublishNavOutput target_tf_name="rune" mode="3"/>
+                    <RuneStateMachine flag_name="big_rune_flag_1" status_key="big_energy_state" target_state="1"/>
+                  </ReactiveSequence>
+                </Sequence>
+
+                <Sequence>
+                  <CheckValue value="{big_rune_flag_2}" expected="0" operator="eq"/>
+                  <CheckValue value="{stage_time}" expected="150" operator="le"/>
+                  <CheckValue value="{stage_time}" expected="90" operator="gt"/>
+                  <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                  <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                  <LogMessage message="尝试激活第二次大能量机关"/>
+                  <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="150" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="90" operator="gt"/>
+                    <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                    <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                    <Nav x="7.03" y="-3.51" />
+                  </ReactiveSequence>
+                  <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="150" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="90" operator="gt"/>
+                    <PublishNavOutput target_tf_name="rune" mode="3"/>
+                    <RuneStateMachine flag_name="big_rune_flag_2" status_key="big_energy_state" target_state="1"/>
+                  </ReactiveSequence>
+                </Sequence>
+
+                <Sequence>
+                  <CheckValue value="{big_rune_flag_3}" expected="0" operator="eq"/>
+                  <CheckValue value="{stage_time}" expected="90" operator="le"/>
+                  <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                  <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                  <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                  <LogMessage message="尝试激活第三次大能量机关"/>
+                  <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="90" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                    <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                    <CheckValue value="{rune_available}" expected="1" operator="eq"/>
+                    <Nav x="7.03" y="-3.51" />
+                  </ReactiveSequence>
+                  <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="90" operator="le"/>
+                    <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                    <PublishNavOutput target_tf_name="rune" mode="3"/>
+                    <RuneStateMachine flag_name="big_rune_flag_3" status_key="big_energy_state" target_state="1"/>
+                  </ReactiveSequence>
+                </Sequence>
+              </Fallback>
+              <!-- 血量高且敌方前哨站被击毁 -->
+              <Sequence>
+                <CheckValue value="{enemy_outpost_status}" expected="0" operator="gt"/>
+                <Fallback>                  <!-- 状态机的每一状态检查不通过返回false就进入下一状态 -->
+                  <!-- 巡航点0: x="0.0" y="3.0" -->
+                  <Sequence>
+                    <CheckValue value="{cruise_state}" expected="0" operator="eq"/>
+                    <ReactiveSequence>
+                      <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                      <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                      <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                      <Nav x="15.1" y="2.07" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                      <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                      <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                      <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                      <Guardian guard_duration = "10.0"/>
+                    </ReactiveSequence>
+                    <CruiserStateManager cruise_state_in = "{cruise_state}"
+                                                    cruise_state_out = "{cruise_state}"
+                                                    total_points = "{global_total_points}" />
+                  </Sequence>
+
+                  <!-- 巡航点1: x="0.0" y="6.0" -->
+                  <Sequence>
+                    <CheckValue value="{cruise_state}" expected="1" operator="eq"/>
+                    <ReactiveSequence>
+                      <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                      <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                      <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                      <Nav x="1.0" y="0.0" />
+                    </ReactiveSequence>
+                    <ReactiveSequence>
+                      <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                      <CheckValue value="{current_hp}" expected="100" operator="gt"/>
+                      <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                      <Guardian guard_duration = "10.0"/>
+                    </ReactiveSequence>
+                    <CruiserStateManager cruise_state_in = "{cruise_state}"
+                                                    cruise_state_out = "{cruise_state}"
+                                                    total_points = "{global_total_points}" />
+                  </Sequence>
+
+                </Fallback>
+              </Sequence>
+
+              <!-- 血量高且敌方前哨站未被击毁 -->
+              <Sequence>
+                <CheckValue value="{enemy_outpost_status}" expected="0" operator="eq"/>
+                <ReactiveSequence>
+                  <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                  <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                  <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                  <Nav x="8.25" y="3.59" />
+                </ReactiveSequence>
+                <ReactiveSequence>
+                  <CheckValue value="{enemy_outpost_status}" expected="0" operator="eq"/>
+                  <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                  <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                  <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                  <PublishNavOutput target_tf_name="outpost" mode="1"/>
+                  <Guardian guard_duration = "20.0"/>
+                </ReactiveSequence>
+              </Sequence>
+            </Fallback>
+          </Sequence>
+
+          <!-- 低血量分支 -->
+          <Sequence>
+            <ReactiveSequence>
+              <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+              <Fallback>                <!-- 满足血量低或没有弹丸 -->
+                <CheckValue value="{current_hp}" expected="100" operator="le"/>
+                <!-- le表示小于等于 -->
+                <CheckValue value="{bullet_17mm}" expected="20" operator="le"/>
+              </Fallback>
+              <!-- <LogMessage message="血量不足或弹丸不够，返回补给区"/> -->
+              <Nav x="0.0" y="0.0" />
+            </ReactiveSequence>
+            <ReactiveSequence>
+              <LogMessage message="等待血量恢复:{current_hp}"/>
+              <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+              <Inverter>                <!-- 若不满足两条件，则返回success，继续在reactive sequence中循环，直到满足条件返回false 退出-->
+                <Sequence>
+                  <CheckValue value="{current_hp}" expected="300" operator="gt"/>
+                  <!-- gt表示大于等于 -->
+                  <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                </Sequence>
+              </Inverter>
+              <Guardian guard_duration = "15.0"/>
+            </ReactiveSequence>
+          </Sequence>
+        </Fallback>
+      </Sequence>
+    </Sequence>
+  </BehaviorTree>
+
+    <!-- Description of Node Models (used by Groot) -->
+    <TreeNodesModel>
+      <Action ID="RefereeSubscriber" editable="true">
+        <input_port name="topic"/>
+        <output_port name="competition_type"/>
+        <output_port name="competition_stage"/>
+        <output_port name="stage_time"/>
+        <output_port name="robot_id"/>
+        <output_port name="bullet_17mm"/>
+        <output_port name="current_hp"/>
+      </Action>
+      <Action ID="RadarSubscriber" editable="true">
+        <output_port name="robot_1_x"/>
+        <output_port name="robot_1_y"/>
+      </Action>
+      <Action ID="Nav" editable="true">
+        <input_port name="x"/>
+        <input_port name="y"/>
+      </Action>
+      <Action ID="PublishNavOutput" editable="true">
+        <input_port name="target_tf_name"/>
+        <input_port name="mode"/>
+      </Action>
+      <Action ID="RuneStateMachine" editable="true">
+        <input_port name="flag_name"/>
+        <input_port name="status_key"/>
+        <input_port name="target_state"/>
+      </Action>
+      <Action ID="Guardian" editable="true">
+        <input_port name="guard_duration"/>
+      </Action>
+    </TreeNodesModel>
+
+  </root>
+

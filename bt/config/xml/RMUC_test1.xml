@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+      <Sequence>
+        <RefereeSubscriber topic="refree_msg"
+                           competition_type="{competition_type}"
+                           competition_stage="{competition_stage}"
+                           stage_remaining_time="{stage_remaining_time}"
+                           robot_id="{robot_id}"
+                           allow_bullet_17mm="{allow_bullet_17mm}"
+                           current_hp="{current_hp}"/>
+        <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+        <CheckValue value="{competition_type}"
+                    expected="4"
+                    operator="eq"/>
+        <LogMessage message="比赛类型通过"/>
+        <LogMessage message="检查比赛阶段，比赛阶段为：{competition_stage}"/>
+        <CheckValue value="{competition_stage}"
+                    expected="4"
+                    operator="eq"/>
+        <LogMessage message="比赛阶段通过，比赛中"/>
+        <LogMessage message="剩余比赛时间：{stage_remaining_time}"/>
+        <CheckValue value="{stage_remaining_time}"
+                    expected="0"
+                    operator="gt"/>
+        <LogMessage message="比赛还有时间，比赛中"/>
+      </Sequence>
+      <Fallback>
+        <ReactiveSequence>
+          <CheckValue value="{current_hp}" expected="0" operator="gt"/>
+          <LogMessage message="血量足够，进入巡航模式，当前血量: {current_hp}"/>
+          <LogMessage message="当前巡逻状态：{cruise_state}"/>
+          <Cruiser cruise_state="{cruise_state}" 
+                  cruise_state_out="{cruise_state}"
+                  stage_remaining_time="{stage_remaining_time}"/>
+        </ReactiveSequence>
+        <Sequence>
+          <CheckValue value="{current_hp}" expected="0" operator="le"/>
+          <LogMessage message="血量不足，返回补给区"/>
+          <NavigateToPose x="0.0" y="0.0" yaw="0"
+                         timeout="60.0"
+                         keep_sending="true"
+                         stage_remaining_time="{stage_remaining_time}"/>
+        </Sequence>
+      </Fallback>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Condition ID="CheckCountdown"
+               editable="true">
+      <input_port name="remaining_time"/>
+      <input_port name="check_start"/>
+      <input_port name="check_end"/>
+    </Condition>
+    <Condition ID="CheckValue"
+               editable="true">
+      <input_port name="value"/>
+      <input_port name="expected"/>
+      <input_port name="operator"/>
+    </Condition>
+    <Action ID="LogMessage"
+            editable="true">
+      <input_port name="message"/>
+    </Action>
+    <Action ID="NavigateToPose"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="yaw"/>
+      <input_port name="timeout"/>
+      <input_port name="keep_sending"/>
+      <input_port name="stage_remaining_time"/>
+    </Action>
+    <Action ID="RefereeSubscriber"
+            editable="true">
+      <input_port name="topic"/>
+      <output_port name="competition_type"/>
+      <output_port name="competition_stage"/>
+      <output_port name="stage_remaining_time"/>
+      <output_port name="robot_id"/>
+      <output_port name="allow_bullet_17mm"/>
+      <output_port name="current_hp"/>
+    </Action>
+    <Action ID="Cruiser"
+            editable="true">
+      <input_port name="cruise_state"/>
+      <output_port name="cruise_state_out"/>
+      <input_port name="stage_remaining_time"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>

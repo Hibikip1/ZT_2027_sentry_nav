@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <!-- 主行为树 -->
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+        <Sequence>
+            <!-- 赛前检查 - 使用单次初始化，数据由独立线程实时更新 -->
+            <!-- <LogMessage message="选择自瞄模式"/>
+            <ControlAutoAim bullet_17mm ="{bullet_17mm}" competition_stage = "{competition_stage}"/> -->
+            <!-- 比赛类型检查 -->
+            <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+            <CheckValue value="{competition_type}" expected="4" operator="eq"/>
+            <LogMessage message="比赛类型通过"/>
+
+            <!-- 比赛阶段检查 -->
+            <LogMessage message="检查比赛阶段，比赛阶段为：{competition_stage}"/>
+            <CheckValue value="{competition_stage}" expected="4" operator="eq"/>
+            <LogMessage message="比赛阶段通过，比赛中"/>
+            <!-- 剩余时间检查 -->
+            <LogMessage message="剩余比赛时间：{stage_time}"/>
+            <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+            <LogMessage message="比赛还有时间，比赛中"/>
+            <AutoAimManager is_auto_aim = "1"
+                            auto_aim_mode = "1"
+                            targets='[{"type":1,"priority":3},
+                                      {"type":2,"priority":3},
+                                      {"type":3,"priority":1},
+                                      {"type":4,"priority":40},
+                                      {"type":5,"priority":30},
+                                      {"type":6,"priority":1},
+                                      {"type":7,"priority":35}]'
+                            is_gimbal_patrol = "1"
+                            yaw_degrees = "45.5"
+                            is_reached = "1" />
+        </Sequence>
+
+        <Sequence>
+          <Fallback> <!-- 血量分支判断-->
+            <!-- 高血量分支 -->
+            <Sequence>
+                <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                <LogMessage message="血量健康，前往占点区"/>
+                <Fallback>
+                    <!-- 血量高且己方前哨站未被击毁 -->
+                    <Sequence>
+                        <CheckValue value="{friend_outpost}" expected="0" operator="gt"/>
+                        <Fallback> <!-- 状态机的每一状态检查不通过返回false就进入下一状态 -->
+                            <!-- 巡航点0: x="0.0" y="3.0" -->
+                            <Sequence>
+                                <CheckValue value="{cruise_state}" expected="0" operator="eq"/>
+                                <ReactiveSequence>
+                                    <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                                    <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                                    <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                                    <Nav x="0.0" y="3.0" />
+                                </ReactiveSequence>
+                                <Fallback>
+                                    <ReactiveSequence>
+                                        <AutoAimManager is_auto_aim = "1"
+                                                        auto_aim_mode = "1"
+                                                        targets='[{"type":1,"priority":3},
+                                                                  {"type":2,"priority":3},
+                                                                  {"type":3,"priority":1},
+                                                                  {"type":4,"priority":40},
+                                                                  {"type":5,"priority":30},
+                                                                  {"type":6,"priority":1},
+                                                                  {"type":7,"priority":35}]'
+                                                        is_gimbal_patrol = "1"
+                                                        yaw_degrees = "45.5"
+                                                        is_reached = "1" />
+                                        <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                                        <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                                        <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                                        <!-- 使用反相器，触发临时事件的反条件，不符反条件即符合条件，进入临时事件 -->
+                                        <Inverter>
+                                            <NavPathFeasibility 
+                                                current_x="0.0" current_y="10.0" 
+                                                enemy_x="{robot_1_x}" enemy_y="{robot_1_y}" 
+                                                enemy_hp="{enemy_hero}" enemy_max_hp="500" 
+                                                distance_weight="0.6" hp_weight="0.4" 
+                                                max_distance="8.0" 
+                                                feasibility_threshold="2.0" 
+                                                robot_frame="base_link" map_frame="map"
+                                                feasibility_score="{attack_feasibility}"
+                                                path_length="{path_to_enemy}"/>
+                                        </Inverter>
+                                        <!-- <LogMessage message="敌人攻击可行性分析不通过，可行性得分:{attack_feasibility}"/> -->
+                                        <Guardian guard_duration = "5.0"/>
+                                    </ReactiveSequence>
+                                    <!-- 临时事件 触发条件：基于导航路径长的评估通过 -->
+                                    <Sequence>
+                                        <LogMessage message="敌人攻击可行性分析通过，可行性得分:{attack_feasibility}"/>
+                                        <!-- 阶段1: 前往临时点 -->
+                                        <ReactiveSequence>
+                                        <CheckValue value="{stage_time}" expected="0" operator="gt"/> 
+                                        <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                                        <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                                        <!-- 进入临时条件有两种可能：1.临时事件触发 2.血量时间弹丸判断不通过 再次判断使进入条件只剩临时事件触发一种 -->
+                                        <AttackNav x="{robot_1_x}" y="{robot_1_y}"
+                                                early_success_distance="2.5" 
+                                                robot_frame="base_link" map_frame="map"/>
+                                        </ReactiveSequence>
+                                        <!-- 阶段2: 短时驻守 -->
+                                        <ReactiveSequence>
+                                        <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                                        <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                                        <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                                        <Guardian guard_duration="2.0"/>
+                                        </ReactiveSequence>
+                                        <!-- 阶段3: 返回原点 -->
+                                        <ReactiveSequence>
+                                        <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                                        <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                                        <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                                        <Nav x="0.0" y="2.0"/>
+                                        </ReactiveSequence>
+                                    </Sequence>                   
+                                </Fallback>
+                                <CruiserStateManager cruise_state_in = "{cruise_state}"
+                                                    cruise_state_out = "{cruise_state}"
+                                                    total_points = "{global_total_points}" />
+                            </Sequence>
+
+                            <!-- 巡航点1: x="0.0" y="6.0" -->
+                            <Sequence>
+                                <CheckValue value="{cruise_state}" expected="1" operator="eq"/>
+                                <ReactiveSequence>
+                                    <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                                    <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                                    <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                                    <Nav x="0.0" y="6.0" />
+                                </ReactiveSequence>
+                                <Fallback>
+                                    <ReactiveSequence>
+                                        <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                                        <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                                        <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                                        <Guardian guard_duration = "5.0"/>
+                                    </ReactiveSequence>
+                                </Fallback>
+                                <CruiserStateManager cruise_state_in = "{cruise_state}"
+                                                    cruise_state_out = "{cruise_state}"
+                                                    total_points = "{global_total_points}" />
+                            </Sequence>
+                        </Fallback>
+                    </Sequence>
+
+                    <!-- 血量高且己方前哨站被击毁 -->
+                    <Sequence>
+                        <CheckValue value="{friend_outpost}" expected="0" operator="eq"/>
+                        <LogMessage message="前哨站你怎么似了"/>
+                        <ReactiveSequence>
+                            <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                            <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                            <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                            <Nav x="0.0" y="1.0" />
+                        </ReactiveSequence>
+                        <ReactiveSequence>
+                            <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                            <CheckValue value="{current_hp}" expected="210" operator="gt"/>
+                            <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                            <Guardian guard_duration = "10.0"/>
+                        </ReactiveSequence>
+                    </Sequence>
+                </Fallback>
+            </Sequence>
+
+            <!-- 低血量分支 -->
+            <Sequence>
+              <ReactiveSequence>
+                <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                <Fallback> <!-- 满足血量低或没有弹丸 -->
+                  <CheckValue value="{current_hp}" expected="210" operator="le"/> <!-- le表示小于等于 -->
+                  <CheckValue value="{bullet_17mm}" expected="20" operator="le"/>
+                </Fallback>
+                <LogMessage message="血量不足或弹丸不够，返回补给区"/>
+                <Nav x="0.0" y="0.0" />
+              </ReactiveSequence>
+              <ReactiveSequence>
+                <LogMessage message="等待血量恢复"/>
+                <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                <Inverter> <!-- 若不满足两条件，则返回success，继续在reactive sequence中循环，直到满足条件返回false 退出-->
+                  <Sequence>
+                    <CheckValue value="{current_hp}" expected="400" operator="gt"/> <!-- gt表示大于等于 -->
+                    <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                  </Sequence>
+                </Inverter>
+                <Guardian guard_duration = "15.0"/>
+              </ReactiveSequence>
+            </Sequence>
+          </Fallback>
+        </Sequence>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="RefereeSubscriber" editable="true">
+      <input_port name="topic"/>
+      <output_port name="competition_type"/>
+      <output_port name="competition_stage"/>
+      <output_port name="stage_time"/>
+      <output_port name="robot_id"/>
+      <output_port name="bullet_17mm"/>
+      <output_port name="current_hp"/>
+    </Action>
+    <Action ID="RadarSubscriber" editable="true">
+      <output_port name="robot_1_x"/>
+      <output_port name="robot_1_y"/>
+    </Action>
+    <Action ID="Nav" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+    </Action>
+    <Action ID="Guardian" editable="true">
+      <input_port name="guard_duration"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>
+

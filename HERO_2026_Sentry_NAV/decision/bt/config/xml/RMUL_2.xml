@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <!-- 主行为树 -->
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+        <!-- 赛前准备与阶段检查完全保留 -->
+        <Sequence>
+            <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+            <CheckValue value="{competition_type}" expected="4" operator="eq"/>
+            <LogMessage message="检查比赛阶段，比赛阶段为：{competition_stage}"/>
+            <CheckValue value="{competition_stage}" expected="4" operator="eq"/>
+            <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+
+            <AutoAimManager is_auto_aim="1"
+                            auto_aim_mode="1"
+                            targets='[{"type":1,"priority":50},
+                                      {"type":2,"priority":30},
+                                      {"type":3,"priority":30},
+                                      {"type":4,"priority":40},
+                                      {"type":5,"priority":30},
+                                      {"type":6,"priority":100},
+                                      {"type":7,"priority":1}]'
+                            is_gimbal_patrol="1"
+                            yaw_degrees="45.5"
+                            is_reached="1" />
+        </Sequence>
+
+        <!-- ★ 核心控制分支：由于使用Fallback，只会执行从上往下第一个满足条件的Sequence ★ -->
+        <Fallback> 
+            
+            <!-- 【第一层强打断】致命血量（小于等于150），任何时间都直接回家 -->
+            <Sequence>
+                <CheckValue value="{current_hp}" expected="150" operator="le"/>
+                <LogMessage message="触发底层防御，血量不足({current_hp})，立即返回补给区"/>
+                <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                    <Nav x="-5.10" y="3.10" />
+                </ReactiveSequence>
+                <ReactiveSequence>
+                    <LogMessage message="等待血量恢复...当前({current_hp})"/>
+                    <Inverter>
+                        <!-- 等到血量恢复到大于350以上才脱离补给状态 -->
+                        <CheckValue value="{current_hp}" expected="350" operator="gt"/> 
+                    </Inverter>
+                    <Guardian guard_duration="5.0"/>
+                </ReactiveSequence>
+            </Sequence>
+
+            <!-- 【第二层控制】战术时间窗口，指定多个特殊时间段且血量不佳（小于300），回家 -->
+            <!-- 解析：因为Fallback相当于“或”，只要命中任意一个时间窗口且血量<300就进入补给状态 -->
+            <Sequence>
+                <CheckValue value="{current_hp}" expected="300" operator="le"/>
+                
+                <!-- 时间窗口集合（或关系）：任意一个Sequence满足即可 -->
+                <Fallback>
+                    <!-- 窗口1: 倒计时 300 ~ 285秒 -->
+                    <Sequence>
+                        <CheckValue value="{stage_time}" expected="285" operator="ge"/>
+                        <CheckValue value="{stage_time}" expected="300" operator="le"/>
+                    </Sequence>
+                    <!-- 窗口2: 倒计时 240 ~ 225秒 -->
+                    <Sequence>
+                        <CheckValue value="{stage_time}" expected="225" operator="ge"/>
+                        <CheckValue value="{stage_time}" expected="240" operator="le"/>
+                    </Sequence>
+                    <!-- 窗口3: 倒计时 180 ~ 165秒 -->
+                    <Sequence>
+                        <CheckValue value="{stage_time}" expected="165" operator="ge"/>
+                        <CheckValue value="{stage_time}" expected="180" operator="le"/>
+                    </Sequence>
+                    <!-- 窗口4: 倒计时 120 ~ 105秒 -->
+                    <Sequence>
+                        <CheckValue value="{stage_time}" expected="105" operator="ge"/>
+                        <CheckValue value="{stage_time}" expected="120" operator="le"/>
+                    </Sequence>
+                </Fallback>
+
+                <LogMessage message="触发【战术补给】进入特定时间窗且血量不足({current_hp})，按计划补给"/>
+                
+                <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                    <Nav x="-5.10" y="3.10" />
+                </ReactiveSequence>
+                <ReactiveSequence>
+                    <LogMessage message="战术等待血量恢复...当前({current_hp})"/>
+                    <Inverter>
+                        <!-- 战术补给时只要补到>350就继续出门 -->
+                        <CheckValue value="{current_hp}" expected="350" operator="gt"/> 
+                    </Inverter>
+                    <Guardian guard_duration="5.0"/>
+                </ReactiveSequence>
+            </Sequence>
+
+            <!-- 【第三层常态】常规常态（血量充沛>=300），前往目标点 -->
+            <Sequence>
+                <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                <CheckValue value="{current_hp}" expected="150" operator="gt"/>
+                <LogMessage message="触发【常规防守】，前往占点区执行常态防御"/>
+                <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                    <CheckValue value="{current_hp}" expected="150" operator="gt"/>
+                    <Nav x="0.00" y="-0.5" />
+                </ReactiveSequence>
+                <ReactiveSequence>
+                    <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                    <CheckValue value="{current_hp}" expected="150" operator="gt"/>
+                    <Guardian guard_duration="5.0"/>
+                </ReactiveSequence>
+            </Sequence>
+        </Fallback>
+
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- 模型定义 -->
+  <TreeNodesModel>
+    <Action ID="RefereeSubscriber" editable="true">
+      <input_port name="topic"/>
+      <output_port name="competition_type"/>
+      <output_port name="competition_stage"/>
+      <output_port name="stage_time"/>
+      <output_port name="robot_id"/>
+      <output_port name="current_hp"/>
+    </Action>
+    <Action ID="RadarSubscriber" editable="true">
+      <output_port name="robot_1_x"/>
+      <output_port name="robot_1_y"/>
+    </Action>
+    <Action ID="Nav" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+    </Action>
+    <Action ID="Guardian" editable="true">
+      <input_port name="guard_duration"/>
+    </Action>
+  </TreeNodesModel>
+</root>

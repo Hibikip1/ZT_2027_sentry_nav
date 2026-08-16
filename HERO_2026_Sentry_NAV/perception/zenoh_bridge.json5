@@ -1,0 +1,11 @@
+{
+  plugins: {
+    ros2dds: {
+      allow: {
+        // 只允许这几类接口过桥。实际表达式可批量书写，任意组合
+        publishers: ["/carrot_pose","/MaskID","/gimbal_decision"],        // 允许A话题发送
+        subscribers: ["/tracker/autoaim"],       // 允许B话题接收
+      }
+    }
+  }
+}

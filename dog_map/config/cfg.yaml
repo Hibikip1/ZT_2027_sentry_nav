@@ -1,0 +1,16 @@
+/** :
+
+    ros__parameters:
+      odom_topic: "/odometry/filtered"
+      cloud_topic: "cloud_registered"
+      half_map_size: 10.0 #以车为中心的局部地图,也就是点云分析范围
+      resolution_z: 0.03 #z方向分辨率,用于高层分析
+      heighter_than_ground_threshold: 0.091 #地面分割
+      higher_than_car_threshold: 0.7 # 最高点云高度,高于此数值的过滤
+      frame_save: 10 # 地图记忆帧数
+      LOG_OCC_HIT: 41
+      LOG_OCC_FREE: -10
+      THR_OCC: 30
+      MAX_LOG: 100
+      MIN_LOG: 5
+      # map_yaml_path 由融合 launch 参数注入

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <!-- 主行为树 -->
+  <!-- 按时间驻守+回家补给 -->
+  <!-- 巡逻点数：2 -->
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+        <Sequence>
+            <!-- 比赛类型检查 -->
+            <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+            <CheckValue value="{competition_type}" expected="1" operator="eq"/>
+            <LogMessage message="比赛类型通过"/>
+
+            <!-- 比赛阶段检查 -->
+            <LogMessage message="检查比赛阶段，比赛阶段为：{competition_stage}"/>
+            <CheckValue value="{competition_stage}" expected="4" operator="eq"/>
+            <LogMessage message="比赛阶段通过，比赛中"/>
+            <!-- 剩余时间检查 -->
+            <LogMessage message="剩余比赛时间：{stage_time}"/>
+            <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+            <LogMessage message="比赛还有时间，比赛中"/>
+            <AutoAimManager is_auto_aim = "1"
+                            auto_aim_mode = "1"
+                            targets='[{"type":1,"priority":10},
+                                      {"type":2,"priority":6},
+                                      {"type":3,"priority":6},
+                                      {"type":4,"priority":8},
+                                      {"type":5,"priority":4},
+                                      {"type":6,"priority":2},
+                                      {"type":7,"priority":1}]'
+                            is_gimbal_patrol = "1"
+                            yaw_degrees = "45.5"
+                            is_reached = "1" />
+        </Sequence>
+
+        <Fallback> <!-- 血量分支判断-->
+          <!-- 高血量分支 -->
+          <Sequence>
+              <CheckValue value="{current_hp}" expected="200" operator="gt"/>
+              <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+              <LogMessage message="血量健康且时间适合，前往占点巡逻区"/>
+              <Fallback>
+                  <!-- 血量高 且 时间在前三分钟 -->
+                  <Sequence>
+                      <CheckValue value="{stage_time}" expected="240" operator="gt"/>
+                      <ReactiveSequence>
+                          <CheckValue value="{stage_time}" expected="240" operator="gt"/>
+                          <CheckValue value="{current_hp}" expected="200" operator="gt"/>
+                          <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                          <Nav x="2.95" y="4.60" />
+                          <LogMessage message="四分钟外"/>
+                      </ReactiveSequence>
+                      <ReactiveSequence>
+                          <CheckValue value="{stage_time}" expected="240" operator="gt"/>
+                          <CheckValue value="{current_hp}" expected="200" operator="gt"/>
+                          <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                          <Guardian guard_duration = "5.0"/>
+                      </ReactiveSequence>                                   
+                  </Sequence>
+
+                  <!-- 血量高 且 在四分钟内 -->
+                  <Sequence>
+                      <CheckValue value="{stage_time}" expected="240" operator="le"/>
+                      <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                      <ReactiveSequence>
+                          <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                          <CheckValue value="{current_hp}" expected="200" operator="gt"/>
+                          <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                          <Nav x="-1.08" y="4.32" />
+                          <LogMessage message="四分钟内，巡航点2"/>
+                      </ReactiveSequence>
+                      <ReactiveSequence>
+                          <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+                          <CheckValue value="{current_hp}" expected="200" operator="gt"/>
+                          <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                          <Guardian guard_duration = "5.0"/>
+                      </ReactiveSequence>
+                  </Sequence>
+              </Fallback>
+          </Sequence>
+
+          <!-- 低血量分支 -->
+          <Sequence>
+            <ReactiveSequence>
+              <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+              <Fallback> <!-- 满足血量低或没有弹丸 -->
+                <CheckValue value="{current_hp}" expected="200" operator="le"/> <!-- le表示小于等于 -->
+                <CheckValue value="{bullet_17mm}" expected="20" operator="le"/>
+              </Fallback>
+              <LogMessage message="血量不足或弹丸不够，返回补给区"/>
+              <Nav x="5.89" y="-1.95" />
+            </ReactiveSequence>
+            <ReactiveSequence>
+              <LogMessage message="等待血量恢复:{current_hp}"/>
+              <CheckValue value="{stage_time}" expected="0" operator="gt"/>
+              <Inverter> <!-- 若不满足两条件，则返回success，继续在reactive sequence中循环，直到满足条件返回false 退出-->
+                <Sequence>
+                  <CheckValue value="{current_hp}" expected="300" operator="gt"/> <!-- gt表示大于 -->
+                  <CheckValue value="{bullet_17mm}" expected="20" operator="gt"/>
+                </Sequence>
+              </Inverter>
+              <Guardian guard_duration = "4.0"/>
+            </ReactiveSequence>
+          </Sequence>
+        </Fallback>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="RefereeSubscriber" editable="true">
+      <input_port name="topic"/>
+      <output_port name="competition_type"/>
+      <output_port name="competition_stage"/>
+      <output_port name="stage_time"/>
+      <output_port name="robot_id"/>
+      <output_port name="bullet_17mm"/>
+      <output_port name="current_hp"/>
+    </Action>
+    <Action ID="RadarSubscriber" editable="true">
+      <output_port name="robot_1_x"/>
+      <output_port name="robot_1_y"/>
+    </Action>
+    <Action ID="Nav" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+    </Action>
+    <Action ID="Guardian" editable="true">
+      <input_port name="guard_duration"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>
+

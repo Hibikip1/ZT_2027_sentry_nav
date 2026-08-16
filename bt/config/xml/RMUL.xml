@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <!-- 主行为树 -->
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+        <Sequence>
+            <!-- 赛前检查 -->
+            <RefereeSubscriber topic="refree_msg"
+                                competition_type="{competition_type}"
+                                competition_stage="{competition_stage}"
+                                stage_remaining_time="{stage_remaining_time}"
+                                robot_id="{robot_id}"
+                                allow_bullet_17mm="{allow_bullet_17mm}"
+                                current_hp="{current_hp}"/>
+            <LogMessage message="选择自瞄模式"/>
+            <ControlAutoAim allow_bullet_17mm ="{allow_bullet_17mm}" competition_stage = "{competition_stage}"/>
+        
+
+            <!-- 比赛类型检查 -->
+            <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+            <CheckValue value="{competition_type}" expected="4" operator="eq"/>
+            <LogMessage message="比赛类型通过"/>
+
+            <!-- 比赛阶段检查 -->
+            <LogMessage message="检查比赛阶段，比赛阶段为：{competition_stage}"/>
+            <CheckValue value="{competition_stage}" expected="4" operator="eq"/>
+            <LogMessage message="比赛阶段通过，比赛中"/>
+
+            <!-- 剩余时间检查 -->
+            <LogMessage message="剩余比赛时间：{stage_remaining_time}"/>
+            <CheckValue value="{stage_remaining_time}" expected="0" operator="gt"/>
+            <LogMessage message="比赛还有时间，比赛中"/>
+        </Sequence>
+
+        <Sequence>
+          <Fallback>
+            <!-- 高血量分支 -->
+            <Sequence>
+              <CheckValue value="{current_hp}" expected="380" operator="gt"/>
+              <LogMessage message="血量健康，前往占点区"/>
+              <!-- x="2.25" y="5.25" -->
+              <NavigateToPose x="1.0" y="0.0" yaw="0" timeout="60.0" keep_sending="true" 
+                                              stage_remaining_time="{stage_remaining_time}"/>
+              <!-- <Delay delay_msec="5000">
+                <NavigateToPose x="0.0"
+                                y="1.5"
+                                yaw="0"
+                                timeout="60.0"
+                                keep_sending="true"
+                                stage_remaining_time="{stage_remaining_time}"/>
+              </Delay>
+              <Delay delay_msec="5000">
+              <LogMessage message="延时5s"/>
+              </Delay> -->
+
+            </Sequence>
+            <!-- 低血量分支 -->
+            <Sequence>
+              <CheckValue value="{current_hp}" expected="210" operator="le"/> <!-- le表示小于等于 -->
+              <LogMessage message="血量不足，返回补给区"/>
+              <!-- <NavigateToPose x="4.5" y="10.0" yaw="0" timeout="60.0" keep_sending="true" 
+                                              stage_remaining_time="{stage_remaining_time}"/> -->
+              <NavigateToPose x="0.0" y="0.0" yaw="0" timeout="60.0" keep_sending="true" 
+                                stage_remaining_time="{stage_remaining_time}"/>
+            </Sequence>
+          </Fallback>
+        </Sequence>
+
+    </Sequence>
+  </BehaviorTree>
+</root>

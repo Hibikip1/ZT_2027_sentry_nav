@@ -1,0 +1,5 @@
+float32 robot_x
+float32 robot_y
+float32 robot_yaw
+bool is_arrived
+float32 expect_spin_degree

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+<!-- 全局黑板声明 -->
+  <TreeNodesModel>
+    <Blackboard>
+      <Parameter name="global_total_points" type="int" value="2"/>
+    </Blackboard>
+  </TreeNodesModel>
+
+  <!-- 主行为树 -->
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+        <Sequence>
+          <!-- 赛前检查 -->
+          <RefereeSubscriber topic="refree_msg"
+                              competition_type="{competition_type}"
+                              competition_stage="{competition_stage}"
+                              stage_remaining_time="{stage_remaining_time}"
+                              robot_id="{robot_id}"
+                              allow_bullet_17mm="{allow_bullet_17mm}"
+                              current_hp="{current_hp}"/>
+          <LogMessage message="选择自瞄模式"/>
+          <ControlAutoAim allow_bullet_17mm ="{allow_bullet_17mm}" competition_stage = "{competition_stage}"/>
+      
+
+          <!-- 比赛类型检查 -->
+          <LogMessage message="检查比赛类型，比赛类型为：{competition_type}"/>
+          <CheckValue value="{competition_type}" expected="4" operator="eq"/>
+          <LogMessage message="比赛类型通过"/>
+
+          <!-- 比赛阶段检查 -->
+          <LogMessage message="检查比赛阶段，比赛阶段为：{competition_stage}"/>
+          <CheckValue value="{competition_stage}" expected="4" operator="eq"/>
+          <LogMessage message="比赛阶段通过，比赛中"/>
+        </Sequence>
+
+        <ReactiveSequence>
+          <!-- 剩余时间检查 -->
+          <LogMessage message="剩余比赛时间：{stage_remaining_time}"/>
+          <CheckValue value="{stage_remaining_time}" expected="0" operator="gt"/>
+          <LogMessage message="比赛还有时间，比赛中"/>
+          <Fallback> <!-- 血量分支判断-->
+            <!-- 高血量分支 -->
+            <Sequence>
+              <CheckValue value="{current_hp}" expected="380" operator="gt"/>
+              <LogMessage message="血量健康，前往占点区"/>
+
+              <Fallback>
+                <!-- 巡航点0: x="1.0" y="0.0" -->
+                <Sequence>
+                  <CheckValue value="{cruise_state}" expected="0" operator="eq"/>
+                  <Nav x="3.0" y="0.0" />
+                  <Guardian guard_duration = "4.0"/>
+                  <CruiserStateManager cruise_state_in = "{cruise_state}"
+                                       cruise_state_out = "{cruise_state}"
+                                       total_points = "{global_total_points}" />
+                </Sequence>
+
+                <!-- 巡航点1: x="2.0" y="0.0" -->
+                <Sequence>
+                  <CheckValue value="{cruise_state}" expected="1" operator="eq"/>
+                  <Nav x="0.0" y="0.0" />
+                  <Guardian guard_duration = "4.0"/>
+                  <CruiserStateManager cruise_state_in = "{cruise_state}"
+                                       cruise_state_out = "{cruise_state}"
+                                       total_points = "{global_total_points}" />
+                </Sequence>
+              </Fallback>
+            </Sequence>
+
+            <!-- 低血量分支 -->
+            <Sequence>
+              <CheckValue value="{current_hp}" expected="210" operator="le"/> <!-- le表示小于等于 -->
+              <LogMessage message="血量不足，返回补给区"/>
+              <Nav x="0.0" y="0.0" />
+            </Sequence>
+          </Fallback>
+        </ReactiveSequence>
+    </Sequence>
+  </BehaviorTree>
+</root>
