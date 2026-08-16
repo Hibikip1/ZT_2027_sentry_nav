@@ -6,6 +6,47 @@
 
 深圳北理莫斯科大学 北极熊战队 2025 赛季哨兵导航仿真/实车包
 
+> **本仓库为 2027 赛季融合版(`ZT_2027_sentry_nav`)** —— 在 pb2025 原版基础上融合了
+> [HERO_2026_Sentry_NAV](https://github.com/HIT-Wh/HERO_2026_Sentry_NAV)(哈工大威海 HERO 战队)的
+> 6 大模块:决策层、感知后端、MPC 规划、MINCO 平滑、导航插件、标定工具。
+> 详细融合过程与改动清单见 [FUSION_GUIDE.md](./FUSION_GUIDE.md),两套代码结构分析见 [CODE_STRUCTURE_OVERVIEW.md](./CODE_STRUCTURE_OVERVIEW.md)。
+
+## 0. 2027 融合版说明
+
+### 0.1 融合的 HERO 模块
+
+| 模块 | 仓库内位置 | 作用 |
+| --- | --- | --- |
+| 决策层 | [`bt/`](./bt/) | 行为树决策(哨兵巡逻/迎战逻辑),使用 vendored [behaviortree_cpp](./behaviortree_cpp/) v4.6.2 |
+| 感知后端 | [`dog_map/`](./dog_map/) + [`fast_layer/`](./fast_layer/) | 占用栅格建图与快速障碍物层,替代原 terrain_analysis 感知链路(单雷达模式) |
+| MPC 控制器 | [`hero_mpc_controller/`](./hero_mpc_controller/) | ACADOS 求解的模型预测控制器,替换原 `pb_omni_pid_pursuit_controller` |
+| MINCO 平滑器 | [`pb_minco_smoother/`](./pb_minco_smoother/) | MINCO 轨迹平滑,位于 MPC 与全局规划之间 |
+| 导航插件 | [`pb_nav2_plugins/`](./pb_nav2_plugins/) | HERO 增强版(BackUpFreeSpace 后退避障、IsStuckCondition 等待/后退恢复),**替换**根目录原版 |
+| 标定工具 | [`scripts/lidar_extrinsic_calibration.py`](./scripts/lidar_extrinsic_calibration.py) | 雷达外参标定 |
+
+### 0.2 两套导航栈可切换
+
+启动时通过 `hero_stack` 参数选择导航栈(`pb2025_nav_bringup/launch/`):
+
+- **HERO 栈(默认)**:SmacPlannerHybrid 全局规划 → MINCO 轨迹平滑(`smoother_server`) → MPC 控制(`hero_mpc_controller`),由决策层 `bt` 驱动,经 [decision_launch.py](./bt/launch/decision_launch.py) 启动
+- **原版栈**:SmacHybrid 全局规划 + `pb_omni_pid_pursuit_controller` 路径跟踪,与上游 pb2025 行为一致
+
+```bash
+# HERO 栈(仿真默认开启)
+ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_2025 slam:=False
+
+# 原版栈
+ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_2025 slam:=False hero_stack:=False
+```
+
+### 0.3 构建注意
+
+- MPC 依赖 **acados v0.5.0**(API 与 0.4.x 不兼容),已随仓库 vendored 于 [`src/third_party/acados/`](./src/third_party/acados/),构建脚本见 [`scripts/install_acados.sh`](./scripts/install_acados.sh)
+- 已生成的求解器代码位于 `hero_mpc_controller/model/c_generated_code`,重新生成见 [`scripts/gen_acados_code.py`](./scripts/gen_acados_code.py)(需 casadi / acados_template / tera_renderer)
+- 完整构建与启动步骤沿用下文 Quick Start,`colcon build --symlink-install` 即可
+
+---
+
 ![PolarBear Logo](https://raw.githubusercontent.com/SMBU-PolarBear-Robotics-Team/.github/main/.docs/image/polarbear_logo_text.png)
 
 [BiliBili: 谁说在家不能调车！？更适合新手宝宝的 RM 导航仿真](https://www.bilibili.com/video/BV12qcXeHETR)
@@ -44,20 +85,29 @@ https://github.com/user-attachments/assets/ae4c19a0-4c73-46a0-95bd-909734da2a42
 
     ```plaintext
     .
-    ├── fake_vel_transform                  # 虚拟速度参考坐标系，以应对云台扫描模式自旋，详见子仓库 README
+    ├── bt                                  # [HERO] 决策层(行为树),依赖 vendored behavriortree_cpp v4
+    ├── dog_map                             # [HERO] 感知后端:占用栅格建图(单雷达模式,消费 registered_scan)
+    ├── fast_layer                          # [HERO] 感知后端:快速障碍物层
+    ├── hero_mpc_controller                 # [HERO] ACADOS MPC 控制器
+    ├── pb_minco_smoother                   # [HERO] MINCO 轨迹平滑器
+    ├── pb_nav2_plugins                     # [HERO] 导航插件(后退避障/卡死恢复),替代原版
+    ├── HERO_2026_Sentry_NAV                # [HERO] 原始仓库保留(含 COLCON_IGNORE,不参与构建)
+    ├── fake_vel_transform                  # 虚拟速度参考坐标系,以应对云台扫描模式自旋,详见子仓库 README
     ├── ign_sim_pointcloud_tool             # 仿真器点云处理工具
     ├── livox_ros_driver2                   # Livox 驱动
     ├── loam_interface                      # point_lio 等里程计算法接口
     ├── pb_teleop_twist_joy                 # 手柄控制
-    ├── pb2025_nav_bringup                  # 启动文件
+    ├── pb2025_nav_bringup                  # 启动文件(含 hero_stack 参数,见 §0.2)
     ├── pb2025_sentry_nav                   # 本仓库功能包描述文件
-    ├── pb_omni_pid_pursuit_controller      # 路径跟踪控制器
+    ├── pb_omni_pid_pursuit_controller      # 路径跟踪控制器(原版栈)
     ├── point_lio                           # 里程计
-    ├── pointcloud_to_laserscan             # 将 terrain_map 转换为 laserScan 类型以表示障碍物（仅 SLAM 模式启动）
+    ├── pointcloud_to_laserscan             # 将 terrain_map 转换为 laserScan 类型以表示障碍物(仅 SLAM 模式启动)
     ├── sensor_scan_generation              # 点云相关坐标变换
     ├── small_gicp_relocalization           # 重定位
-    ├── terrain_analysis                    # 距车体 4m 范围内地形分析，将障碍物离地高度写入 PointCloud intensity
-    └── terrain_analysis_ext                # 车体 4m 范围外地形分析，将障碍物离地高度写入 PointCloud intensity
+    ├── terrain_analysis                    # 距车体 4m 范围内地形分析,将障碍物离地高度写入 PointCloud intensity
+    ├── terrain_analysis_ext                # 车体 4m 范围外地形分析,将障碍物离地高度写入 PointCloud intensity
+    ├── scripts/                            # 标定工具、acados 安装/代码生成、仿真清理脚本
+    └── src/third_party/acados              # vendored acados v0.5.0 源码(MPC 依赖)
     ```
 
 ## 2. Quick Start
