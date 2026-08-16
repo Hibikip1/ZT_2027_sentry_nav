@@ -3,8 +3,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build and Test](https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_sentry_nav/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_sentry_nav/actions/workflows/build_and_test.yml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-
-深圳北理莫斯科大学 北极熊战队 2025 赛季哨兵导航仿真/实车包
+珠海科技学院 征途战队27赛季哨兵导航仿真/实车包
 
 > **本仓库为 2027 赛季融合版(`ZT_2027_sentry_nav`)** —— 在 pb2025 原版基础上融合了
 > [HERO_2026_Sentry_NAV](https://github.com/HIT-Wh/HERO_2026_Sentry_NAV)(哈工大威海 HERO 战队)的
