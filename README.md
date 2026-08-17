@@ -28,12 +28,13 @@
 
 启动时通过 `hero_stack` 参数选择导航栈(`pb2025_nav_bringup/launch/`):
 
-- **HERO 栈(默认)**:SmacPlannerHybrid 全局规划 → MINCO 轨迹平滑(`smoother_server`) → MPC 控制(`hero_mpc_controller`),由决策层 `bt` 驱动,经 [decision_launch.py](./bt/launch/decision_launch.py) 启动
-- **原版栈**:SmacHybrid 全局规划 + `pb_omni_pid_pursuit_controller` 路径跟踪,与上游 pb2025 行为一致
+- **HERO 栈(默认,建图/导航均启用)**:SmacPlannerHybrid 全局规划 → MINCO 轨迹平滑(`smoother_server`) → MPC 控制(`hero_mpc_controller`)。感知基于 dog_map **3D 体素图**,可识别狗洞/悬空结构(有 >15cm 空洞的列不算障碍),无需 2D 静态地图。导航模式由决策层 `bt` 驱动,经 [decision_launch.py](./bt/launch/decision_launch.py) 启动;建图模式不启动决策层(手动遥控建图),slam_toolbox 2D 地图照常生成存档
+- **原版栈**:SmacHybrid 全局规划 + `pb_omni_pid_pursuit_controller` 路径跟踪,基于 2D 静态地图(狗洞会被投影为障碍),与上游 pb2025 行为一致
 
 ```bash
-# HERO 栈(仿真默认开启)
+# HERO 栈(仿真默认,建图/导航通用)
 ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_2025 slam:=False
+ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_2025 slam:=True   # 建图同样用 HERO 栈
 
 # 原版栈
 ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_2025 slam:=False hero_stack:=False

@@ -137,11 +137,11 @@ def generate_launch_description():
 
     declare_hero_stack_cmd = DeclareLaunchArgument(
         "hero_stack",
-        # 建图模式(slam:=True)默认回退原 pb2025 栈;导航模式默认 HERO 融合栈
-        default_value=PythonExpression([
-            "'False' if '", slam, "' == 'True' else 'True'",
-        ]),
-        description="Use HERO fusion stack (MPC/MINCO/dog_map/decision). False falls back to original pb2025 stack. Default: False when slam:=True.",
+        # 建图/导航均默认使用 HERO 融合栈:
+        # dog_map 3D 体素感知可识别狗洞(悬空结构不算障碍),避免 2D 投影把洞顶当障碍;
+        # 需要旧 pb2025 栈时显式 hero_stack:=False
+        default_value="True",
+        description="Use HERO fusion stack (MPC/MINCO/dog_map). False falls back to original pb2025 stack. Default: True.",
     )
 
     declare_decision_xml_cmd = DeclareLaunchArgument(
@@ -214,8 +214,13 @@ def generate_launch_description():
     )
 
     # HERO 融合:决策层(行为树状态机 + 裁判/雷达模拟器),置于命名空间内
+    # 仅导航模式启动决策层;建图模式(slam:=True)不启动,避免自动导航干扰手动建图
     decision_cmd = GroupAction(
-        condition=IfCondition(hero_stack),
+        condition=IfCondition(
+            PythonExpression([
+                "'", hero_stack, "' == 'True' and not ", slam,
+            ])
+        ),
         actions=[
             PushRosNamespace(namespace=namespace),
             SetRemap("/tf", "tf"),
