@@ -3,8 +3,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build and Test](https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_sentry_nav/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_sentry_nav/actions/workflows/build_and_test.yml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-
-深圳北理莫斯科大学 北极熊战队 2025 赛季哨兵导航仿真/实车包
+珠海科技学院 征途战队27赛季哨兵导航仿真/实车包
 
 > **本仓库为 2027 赛季融合版(`ZT_2027_sentry_nav`)** —— 在 pb2025 原版基础上融合了
 > [HERO_2026_Sentry_NAV](https://github.com/HIT-Wh/HERO_2026_Sentry_NAV)(哈工大威海 HERO 战队)的
@@ -47,14 +46,6 @@ ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_20
 - 完整构建与启动步骤沿用下文 Quick Start,`colcon build --symlink-install` 即可
 
 ---
-
-![PolarBear Logo](https://raw.githubusercontent.com/SMBU-PolarBear-Robotics-Team/.github/main/.docs/image/polarbear_logo_text.png)
-
-[BiliBili: 谁说在家不能调车！？更适合新手宝宝的 RM 导航仿真](https://www.bilibili.com/video/BV12qcXeHETR)
-
-https://github.com/user-attachments/assets/d9e778e0-fa43-40c2-96c2-e71eaf7737d4
-
-https://github.com/user-attachments/assets/ae4c19a0-4c73-46a0-95bd-909734da2a42
 
 ## 1. Overview
 
@@ -113,32 +104,10 @@ https://github.com/user-attachments/assets/ae4c19a0-4c73-46a0-95bd-909734da2a42
 
 ## 2. Quick Start
 
-### 2.1 Option 1: Docker
+
+### 2.1 Option 1: Build From Source
 
 #### 2.1.1 Setup Environment
-
-- [Docker](https://docs.docker.com/engine/install/)
-
-- 允许 Docker Container 访问宿主机 X11 显示
-
-    ```bash
-    xhost +local:docker
-    ```
-
-#### 2.1.2 Create Container
-
-```bash
-docker run -it --rm --name pb2025_sentry_nav \
-  --network host \
-  -e "DISPLAY=$DISPLAY" \
-  -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /dev:/dev \
-  ghcr.io/smbu-polarbear-robotics-team/pb2025_sentry_nav:1.3.2
-```
-
-### 2.2 Option 2: Build From Source
-
-#### 2.2.1 Setup Environment
 
 - Ubuntu 22.04
 - ROS: [Humble](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
@@ -155,7 +124,7 @@ docker run -it --rm --name pb2025_sentry_nav \
     sudo make install
     ```
 
-#### 2.2.2 Create Workspace
+#### 2.1.2 Create Workspace
 
 ```bash
 mkdir -p ~/ros_ws
@@ -172,7 +141,7 @@ git clone --recursive https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_sen
 
 > 当前 point_lio with prior_pcd 在大场景的效果并不好，比不带先验点云更容易飘，待 Debug 优化
 
-#### 2.2.3 Build
+#### 2.1.3 Build
 
 ```bash
 rosdep install -r --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
@@ -185,30 +154,36 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 > [!NOTE]
 > 推荐使用 --symlink-install 选项来构建你的工作空间，因为 pb2025_sentry_nav 广泛使用了 launch.py 文件和 YAML 文件。这个构建参数会为那些非编译的源文件使用符号链接，这意味着当你调整参数文件时，不需要反复重建，只需要重新启动即可。
 
-### 2.3 Running
+### 2.2 Running
 
 可使用以下命令启动，在 RViz 中使用 `Nav2 Goal` 插件发布目标点。
 
-#### 2.3.1 仿真
+#### 2.2.1 仿真
 
 单机器人：
+
+仿真环境：
+```bash
+ros2 launch rmu_gazebo_simulator bringup_sim.launch.py
+```
 
 导航模式：
 
 ```bash
-ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py \
-world:=rmuc_2025 \
-slam:=False
+ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_2025 slam:=False
 ```
 
 建图模式：
 
 ```bash
-ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py \
-slam:=True
+ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_2025 slam:=True
 ```
 
-保存栅格地图：`ros2 run nav2_map_server map_saver_cli -f <YOUR_MAP_NAME>  --ros-args -r __ns:=/red_standard_robot1`
+保存栅格地图：
+```bash
+ros2 run nav2_map_server map_saver_cli -f ~/rmuc_2025_map \
+  --ros-args -r __ns:=/red_standard_robot1 -p map_subscribe_transient_local:=True
+```
 
 多机器人 (实验性功能) :
 
@@ -223,7 +198,7 @@ blue_standard_robot1={x: 5.6, y: 1.4, yaw: 3.14}; \
 "
 ```
 
-#### 2.3.2 实车
+#### 2.2.2 实车
 
 建图模式：
 
@@ -246,7 +221,7 @@ slam:=False \
 use_robot_state_pub:=True
 ```
 
-### 2.4 Launch Arguments
+### 2.3 Launch Arguments
 
 启动参数在仿真和实车中大部分是通用的。以下是所有启动参数表格的图例。
 
@@ -275,7 +250,7 @@ use_robot_state_pub:=True
 > [!TIP]
 > 关于本项目更多细节与实车部署指南，请前往 [Wiki](https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_sentry_nav/wiki)
 
-### 2.5 手柄控制
+### 2.4 手柄控制
 
 默认情况下，PS4 手柄控制已开启。键位映射关系详见 [nav2_params.yaml](./pb2025_nav_bringup/config/simulation/nav2_params.yaml) 中的 `teleop_twist_joy_node` 部分。
 
