@@ -73,6 +73,18 @@ def generate_launch_description():
         output='screen',
     )
 
+    # 区域管理器: 读取 zones.yaml, 发布 rviz 可视化 + zone_info 给决策层
+    zone_manager_cmd = Node(
+        package='bt',
+        executable='zone_manager',
+        name='zone_manager',
+        parameters=[
+            {'zones_config_path': os.path.join(bt_dir, 'config', 'yaml', 'zones.yaml')},
+            {'use_sim_time': use_sim_time},
+        ],
+        output='screen',
+    )
+
     return LaunchDescription([
         declare_xml_config_cmd,
         declare_use_simulators_cmd,
@@ -80,4 +92,5 @@ def generate_launch_description():
         refree_pub_cmd,
         radar_pub_cmd,
         decision_node_cmd,
+        zone_manager_cmd,
     ])

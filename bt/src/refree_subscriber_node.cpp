@@ -10,6 +10,7 @@
 #include "cruiser_node.hpp"
 #include "guard_with_attack_node.hpp"
 #include "thread_node.hpp"
+#include "zone_node.hpp"
 using namespace std::literals;
 
 int main(int argc, char** argv) {
@@ -129,6 +130,8 @@ int main(int argc, char** argv) {
     factory.registerNodeType<GuardWithAttackNode>("GuardWithAttack");
     factory.registerNodeType<PublishNavOutputNode>("PublishNavOutput");
     factory.registerNodeType<RuneStateMachineNode>("RuneStateMachine");
+    factory.registerNodeType<bt_nodes::CheckZoneNode>("CheckZone");
+    factory.registerNodeType<bt_nodes::SetSpinNode>("SetSpin");
 
     RCLCPP_INFO(rclcpp::get_logger("refree_sub"), "行为树节点登记成功");
     auto tree = factory.createTreeFromFile(xml_path, blackboard);

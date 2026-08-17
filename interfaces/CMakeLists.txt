@@ -38,6 +38,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GlobalTarget.msg"
   "msg/GlobalTargetArray.msg"
   "msg/Target.msg"
+  "msg/ZoneInfo.msg"
   
   DEPENDENCIES sensor_msgs geometry_msgs std_msgs
 )

@@ -1,0 +1,28 @@
+# 地图区域定义 (Zone Configuration)
+# 坐标系: map 帧 (与 nav2 / dog_map 一致)
+# 每个区域可定义任务属性, 由 zone_manager 发布给决策层行为树
+
+zones:
+  # ---------------- 狗洞区 ----------------
+  # 狗洞位于 x≈5.1m 的竖直墙上的缺口:
+  #   洞口 y 范围 2.00~4.35m, 中心 (5.12, 3.2), 洞宽 ~2.35m
+  #   穿洞方向沿 x 轴 (垂直墙面)
+  - name: "dog_hole"
+    shape: rectangle
+    center: [5.12, 3.2]
+    size: [2.0, 2.4]        # [沿穿洞方向, 沿墙方向] 覆盖洞口两侧的进入区域
+    yaw: 0.0                # 区域朝向(穿洞方向, 沿 +x)
+    tasks:
+      spin: false           # 1. 不小陀螺
+      face_hole: true       # 2. 导航终点正对洞口 (yaw=0 或 π, 见 nav_yaw)
+      nav_yaw: 0.0          #    过洞时目标朝向(沿 +x 穿洞); 从反方向进洞用 3.14159
+      speed_limit: 0.5      # 3. 过洞限速 (m/s), 可选
+      stop_distance: 1.5    #    距离洞口中心多远时减速对准
+
+  # ---------------- 示例:大路区(正常陀螺) ----------------
+  # - name: "main_road"
+  #   shape: polygon
+  #   points: [[-5.0, -5.0], [9.0, -5.0], [9.0, 7.0], [-5.0, 7.0]]
+  #   tasks:
+  #     spin: true           # 正常区域可以小陀螺
+  #     face_hole: false

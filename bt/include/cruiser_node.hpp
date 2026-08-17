@@ -71,7 +71,8 @@ class NavNode : public StatefulActionNode {
 
     static PortsList providedPorts() {
         return {InputPort<double>("x", "目标点X坐标"),
-                InputPort<double>("y", "目标点Y坐标")};
+                InputPort<double>("y", "目标点Y坐标"),
+                InputPort<double>("yaw", "目标朝向(rad, 可选, 默认0)")};
     }
 
     NodeStatus onStart() override {
@@ -95,8 +96,13 @@ class NavNode : public StatefulActionNode {
             return NodeStatus::FAILURE;
         }
 
+        // 获取可选目标朝向(区域任务/过狗洞用)
+        if (!getInput("yaw", target_yaw_)) {
+            target_yaw_ = 0.0;  // 默认0
+        }
+
         // 创建并发送导航目标
-        auto goal = createGoal(patrol_points_.first, patrol_points_.second);
+        auto goal = createGoal(patrol_points_.first, patrol_points_.second, target_yaw_);
         if (!goal) {
             RCLCPP_ERROR(node_->get_logger(), "无法创建目标点");
             return NodeStatus::FAILURE;
@@ -235,7 +241,7 @@ class NavNode : public StatefulActionNode {
 
    private:
     std::shared_ptr<nav2_msgs::action::NavigateToPose::Goal> createGoal(
-        double x, double y) {
+        double x, double y, double yaw) {
         auto goal = std::make_shared<nav2_msgs::action::NavigateToPose::Goal>();
         goal->pose.header.frame_id = "map";
         goal->pose.header.stamp = node_->now();
@@ -243,9 +249,9 @@ class NavNode : public StatefulActionNode {
         goal->pose.pose.position.y = y;
         goal->pose.pose.position.z = 0.0;
 
-        // 设置朝向（默认为0）
+        // 设置朝向(区域任务/过狗洞时用指定 yaw 正对目标)
         tf2::Quaternion q;
-        q.setRPY(0, 0, 0);
+        q.setRPY(0, 0, yaw);
         goal->pose.pose.orientation = tf2::toMsg(q);
 
         return goal;
@@ -265,6 +271,7 @@ class NavNode : public StatefulActionNode {
 
     // 导航状态成员
     std::pair<double, double> patrol_points_;
+    double target_yaw_{0.0};
     std::shared_future<typename rclcpp_action::ClientGoalHandle<
         nav2_msgs::action::NavigateToPose>::SharedPtr>
         future_goal_handle_;

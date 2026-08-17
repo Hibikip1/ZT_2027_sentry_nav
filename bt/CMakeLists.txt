@@ -37,7 +37,15 @@ add_executable(refree_pub
 
 add_executable(radar_pub
   src/radar_pub_test.cpp)
+
+add_executable(zone_manager
+  src/zone_manager.cpp
+)
 target_link_libraries(decision_node
+${YAML_CPP_LIBRARIES}
+
+)
+target_link_libraries(zone_manager
 ${YAML_CPP_LIBRARIES}
 
 )
@@ -83,10 +91,21 @@ ament_target_dependencies(radar_pub
   nlohmann_json
 )
 
+ament_target_dependencies(zone_manager
+  rclcpp
+  interfaces
+  visualization_msgs
+  nav_msgs
+  tf2_ros
+  tf2_geometry_msgs
+  geometry_msgs
+)
+
 install(TARGETS
   decision_node
   refree_pub
   radar_pub
+  zone_manager
   DESTINATION lib/${PROJECT_NAME}
 )
 

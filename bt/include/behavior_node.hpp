@@ -129,6 +129,7 @@ class AttackNavNode : public StatefulActionNode {
     static PortsList providedPorts() {
         return {InputPort<double>("x", "目标点X坐标"),
                 InputPort<double>("y", "目标点Y坐标"),
+                InputPort<double>("yaw", "目标朝向(rad, 可选, 默认0)"),
                 InputPort<double>("early_success_distance",
                                   "提前成功的距离阈值，默认2.0米"),
                 InputPort<std::string>("robot_frame",
@@ -159,6 +160,11 @@ class AttackNavNode : public StatefulActionNode {
             early_success_distance_ = 2.0;  // 默认2米
         }
 
+        // 获取可选目标朝向(过狗洞时正对洞口用)
+        if (!getInput("yaw", target_yaw_)) {
+            target_yaw_ = 0.0;  // 默认0
+        }
+
         if (!getInput("robot_frame", robot_frame_)) {
             robot_frame_ = "base_link";  // 默认机器人坐标系
         }
@@ -168,7 +174,7 @@ class AttackNavNode : public StatefulActionNode {
         }
 
         // 创建并发送导航目标
-        auto goal = createGoal(target_x_, target_y_);
+        auto goal = createGoal(target_x_, target_y_, target_yaw_);
         if (!goal) {
             return NodeStatus::FAILURE;
         }
@@ -254,7 +260,7 @@ class AttackNavNode : public StatefulActionNode {
 
    private:
     std::shared_ptr<nav2_msgs::action::NavigateToPose::Goal> createGoal(
-        double x, double y) {
+        double x, double y, double yaw) {
         auto goal = std::make_shared<nav2_msgs::action::NavigateToPose::Goal>();
         goal->pose.header.frame_id = map_frame_;
         goal->pose.header.stamp = node_->now();
@@ -262,9 +268,9 @@ class AttackNavNode : public StatefulActionNode {
         goal->pose.pose.position.y = y;
         goal->pose.pose.position.z = 0.0;
 
-        // 设置朝向（这里简单设置为0）
+        // 设置朝向(过狗洞/任务区域时用指定 yaw 正对目标)
         tf2::Quaternion q;
-        q.setRPY(0, 0, 0);
+        q.setRPY(0, 0, yaw);
         goal->pose.pose.orientation = tf2::toMsg(q);
 
         return goal;
@@ -307,6 +313,7 @@ class AttackNavNode : public StatefulActionNode {
 
     double target_x_;
     double target_y_;
+    double target_yaw_{0.0};
     double early_success_distance_;
     std::string robot_frame_;
     std::string map_frame_;
