@@ -178,8 +178,11 @@ ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_20
 ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py world:=rmuc_2025 slam:=True
 ```
 
-保存栅格地图：`ros2 run nav2_map_server map_saver_cli -f ~/rmuc_2025_map \
-  --ros-args -r __ns:=/red_standard_robot1 -p map_subscribe_transient_local:=True`
+保存栅格地图：
+```bash
+ros2 run nav2_map_server map_saver_cli -f ~/rmuc_2025_map \
+  --ros-args -r __ns:=/red_standard_robot1 -p map_subscribe_transient_local:=True
+```
 
 多机器人 (实验性功能) :
 
