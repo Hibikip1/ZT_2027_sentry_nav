@@ -371,17 +371,14 @@ local_costmap:
       height: 5
       resolution: 0.05
       robot_radius: 0.2
-      plugins: ["static_layer", "fast_layer", "inflation_layer"]
+      plugins: ["fast_layer", "inflation_layer"]
       fast_layer:
         plugin: fast_layer::FastLayer
         pointcloud_topic: <robot_namespace>/rog_map/inf_occ
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 4.0
-        inflation_radius: 0.7
+        cost_scaling_factor: 2.5
+        inflation_radius: 0.4
       always_send_full_costmap: False
 global_costmap:
   global_costmap:
@@ -393,17 +390,21 @@ global_costmap:
       robot_base_frame: gimbal_yaw_fake
       robot_radius: 0.2
       resolution: 0.05
-      plugins: ["static_layer", "fast_layer", "inflation_layer"]
+      # 纯实时感知:无 static_layer,不加载 2D 地图(狗洞等悬空结构由 dog_map 过滤)
+      track_unknown_space: true
+      # 显式尺寸(无 static_layer 时 costmap 默认 5x5m 太小)
+      width: 30
+      height: 30
+      origin_x: -10.0
+      origin_y: -10.0
+      plugins: ["fast_layer", "inflation_layer"]
       fast_layer:
         plugin: fast_layer::FastLayer
         pointcloud_topic: <robot_namespace>/rog_map/inf_occ
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 4.0
-        inflation_radius: 0.7
+        cost_scaling_factor: 2.5
+        inflation_radius: 0.4
       always_send_full_costmap: False
 map_server:
   ros__parameters:
