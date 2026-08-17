@@ -10,7 +10,7 @@
 | `HERO_2026_Sentry_NAV/` | **HERO 2026 赛季哨兵导航** | 哈工大(威海)HERO 竞技机器人实验室 | 2025/2026 赛季,实车比赛,算法激进(MPC + MINCO + 行为树决策) |
 
 **关键关系**:HERO 项目在 `hero2025_nav_bringup` 的 `bringup_launch.py` 与 `navigation_launch.py` 中大量沿用 pb2025 的结构(`terrain_analysis`/`terrain_analysis_ext` 节点声明、`BackUpFreeSpace` 行为、`<robot_namespace>` 命名空间替换逻辑、`RewrittenYaml` 参数注入、`cmd_vel` remap 链路),`bringup_launch.py` 版权头即 pb2025 作者 Lihan Chen(带中文注释翻译)。可确认 **HERO 是在 pb2025 基础上二次开发**(nav2 bringup 层高度同源),融合具备天然基础。
-
+1
 ---
 
 ## 一、项目一:pb2025_sentry_nav(根目录)
