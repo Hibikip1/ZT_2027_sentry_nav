@@ -51,8 +51,9 @@ class CheckValueNode : public ConditionNode {
 
    private:
     bool compareValues(int value, int expected) {
-        std::cout << "执行比较操作 [" << value << " " << compare_operator_
-                  << " " << expected << "]" << std::endl;
+        // 高频日志, 注释避免刷屏
+        // std::cout << "执行比较操作 [" << value << " " << compare_operator_
+        //           << " " << expected << "]" << std::endl;
 
         if (compare_operator_ == "eq") return value == expected;
         if (compare_operator_ == "ne") return value != expected;

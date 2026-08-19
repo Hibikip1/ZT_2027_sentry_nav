@@ -125,10 +125,11 @@ def generate_launch_description():
         respawn_delay=2.0,
         parameters=[
             configured_params,
-            {"prior_pcd.prior_pcd_map_path": prior_pcd_file},
-            # 导航模式加载先验 PCD: 路径由 main launch 默认指向
-            # pcd/simulation/<world>.pcd; point_lio 对加载失败有防护
-            {"prior_pcd.enable": True},
+            # point_lio 先验 PCD 回退禁用: 先验原点(camera_init系)与导航
+            # 起点偏差大, init_pose=[0,0,0] 会导致里程计跑飞。
+            # 重定位由 small_gicp 完成(它接受 RViz 2D Pose Estimate 初始化)。
+            {"prior_pcd.prior_pcd_map_path": ""},
+            {"prior_pcd.enable": False},
         ],
         arguments=["--ros-args", "--log-level", log_level],
     )
