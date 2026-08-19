@@ -126,6 +126,9 @@ def generate_launch_description():
         parameters=[
             configured_params,
             {"prior_pcd.prior_pcd_map_path": prior_pcd_file},
+            # 导航模式加载先验 PCD: 路径由 main launch 默认指向
+            # pcd/simulation/<world>.pcd; point_lio 对加载失败有防护
+            {"prior_pcd.enable": True},
         ],
         arguments=["--ros-args", "--log-level", log_level],
     )

@@ -521,7 +521,18 @@ int main(int argc, char ** argv)
         if (init_feats_world->size() >= init_map_size) {
           if (enable_prior_pcd) {
             auto map_cloud = loadPointcloudFromPcd(prior_pcd_map_path);
-            ivox_->AddPoints(map_cloud->points);
+            if (map_cloud && !map_cloud->points.empty()) {
+              ivox_->AddPoints(map_cloud->points);
+              RCLCPP_INFO(LOGGER, "[PRIOR_PCD] 先验地图已加载 (%zu 点)",
+                          map_cloud->points.size());
+            } else {
+              // 先验 PCD 缺失/为空: 回退到实时构建的初始地图
+              RCLCPP_WARN(LOGGER,
+                          "[PRIOR_PCD] 先验地图加载失败或为空 (%s), "
+                          "回退到实时初始地图",
+                          prior_pcd_map_path.c_str());
+              ivox_->AddPoints(init_feats_world->points);
+            }
           } else {
             ivox_->AddPoints(init_feats_world->points);
           }
