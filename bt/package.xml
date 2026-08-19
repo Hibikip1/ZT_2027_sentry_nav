@@ -23,6 +23,7 @@
   <depend>interfaces</depend>
   <depend>visualization_msgs</depend>
   <depend>map_msgs</depend>
+  <depend>example_interfaces</depend>
   <depend>OpenCV</depend>
   <depend>yaml-cpp</depend>
 

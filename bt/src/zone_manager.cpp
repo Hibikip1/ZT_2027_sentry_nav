@@ -27,13 +27,18 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace zone_mgr {
 
 struct ZoneTask {
     bool spin_enabled = true;
     bool face_hole = false;
     double nav_yaw = 0.0;
-    double speed_limit = 0.0;  // 0 = 不限速
+    bool bidirectional = false;  // 双向穿洞: 按机器人位置自动选朝向
+    double speed_limit = 0.0;    // 0 = 不限速
     double stop_distance = 1.5;
 };
 
@@ -126,6 +131,8 @@ class ZoneManagerNode : public rclcpp::Node {
                     if (t["spin"]) zone.tasks.spin_enabled = t["spin"].as<bool>();
                     if (t["face_hole"]) zone.tasks.face_hole = t["face_hole"].as<bool>();
                     if (t["nav_yaw"]) zone.tasks.nav_yaw = t["nav_yaw"].as<double>();
+                    if (t["bidirectional"])
+                        zone.tasks.bidirectional = t["bidirectional"].as<bool>();
                     if (t["speed_limit"])
                         zone.tasks.speed_limit = t["speed_limit"].as<double>();
                     if (t["stop_distance"])
@@ -262,13 +269,27 @@ class ZoneManagerNode : public rclcpp::Node {
             if (pointInPolygon(x, y, zone.points)) {
                 info.in_zone = true;
                 info.zone_name = zone.name;
-                info.nav_yaw = static_cast<float>(zone.tasks.nav_yaw);
                 info.spin_enabled = zone.tasks.spin_enabled;
                 info.speed_limit = static_cast<float>(zone.tasks.speed_limit);
                 info.zone_center_x = static_cast<float>(zone.center_x);
                 info.zone_center_y = static_cast<float>(zone.center_y);
+
+                // 正对洞口: 双向穿洞时按机器人位置自动选朝向
+                if (zone.tasks.face_hole) {
+                    if (zone.tasks.bidirectional) {
+                        // 从洞口 x 负侧来 -> 面向 +x (yaw=0) 穿洞
+                        // 从洞口 x 正侧来 -> 面向 -x (yaw=pi) 穿洞
+                        info.nav_yaw = (x < zone.center_x) ? 0.0f : static_cast<float>(M_PI);
+                    } else {
+                        info.nav_yaw = static_cast<float>(zone.tasks.nav_yaw);
+                    }
+                } else {
+                    info.nav_yaw = static_cast<float>(zone.tasks.nav_yaw);
+                }
+
                 RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000,
-                                     "进入区域: %s", zone.name.c_str());
+                                     "进入区域: %s, nav_yaw=%.2f",
+                                     zone.name.c_str(), info.nav_yaw);
                 break;
             }
         }

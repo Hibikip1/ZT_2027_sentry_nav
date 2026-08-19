@@ -18,9 +18,9 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "behaviortree_cpp/action_node.h"
 
+#include <example_interfaces/msg/float32.hpp>
 #include <interfaces/msg/zone_info.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <serial_interfaces/msg/tovision.hpp>
 
 namespace bt_nodes {
 
@@ -83,6 +83,9 @@ class CheckZoneNode : public BT::ConditionNode {
 };
 
 // ============ SetSpinNode: 控制小陀螺 ============
+// 仿真: 发布 cmd_spin(Float32 角速度) -> fake_vel_transform 叠加到底盘角速度
+//   spin=true  -> 恒定角速度(默认 3.14 rad/s)
+//   spin=false -> 0 (停转)
 class SetSpinNode : public BT::SyncActionNode {
    public:
     SetSpinNode(const std::string& name, const BT::NodeConfig& config)
@@ -93,33 +96,35 @@ class SetSpinNode : public BT::SyncActionNode {
         }
         node_ = node_result;
 
-        spin_pub_ = node_->create_publisher<serial_interfaces::msg::Tovision>(
-            "serial_tovision", 10);
+        spin_pub_ = node_->create_publisher<example_interfaces::msg::Float32>(
+            "cmd_spin", 10);
     }
 
     static BT::PortsList providedPorts() {
-        return {BT::InputPort<bool>("spin", "true=开陀螺, false=关陀螺")};
+        return {
+            BT::InputPort<bool>("spin", "true=开陀螺, false=关陀螺"),
+            BT::InputPort<double>("spin_speed", "陀螺角速度(rad/s, 默认3.14)"),
+        };
     }
 
     BT::NodeStatus tick() override {
         bool spin = true;
+        double spin_speed = 3.14;
         getInput("spin", spin);
+        getInput("spin_speed", spin_speed);
 
-        serial_interfaces::msg::Tovision msg;
-        msg.control_mode = 5;
-        msg.sight_mode = 1;
-        msg.hit_priority = {0, 0, 0, 0, 0, 0, 0, 0};
-        msg.expect_spin_degree = spin ? 1 : 0;
-        msg.dishit = {0, 0, 0, 0, 0, 0, 0, 0};
+        example_interfaces::msg::Float32 msg;
+        msg.data = spin ? static_cast<float>(spin_speed) : 0.0f;
         spin_pub_->publish(msg);
 
-        RCLCPP_INFO(node_->get_logger(), "SetSpin: %s", spin ? "开启" : "关闭");
+        RCLCPP_INFO(node_->get_logger(), "SetSpin: %s (%.2f rad/s)",
+                    spin ? "开启" : "关闭", msg.data);
         return BT::NodeStatus::SUCCESS;
     }
 
    private:
     rclcpp::Node::SharedPtr node_;
-    rclcpp::Publisher<serial_interfaces::msg::Tovision>::SharedPtr spin_pub_;
+    rclcpp::Publisher<example_interfaces::msg::Float32>::SharedPtr spin_pub_;
 };
 
 }  // namespace bt_nodes

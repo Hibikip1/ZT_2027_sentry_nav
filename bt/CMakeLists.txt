@@ -23,6 +23,7 @@ find_package(tf2_ros REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(yaml-cpp REQUIRED  )
 find_package(map_msgs REQUIRED  )
+find_package(example_interfaces REQUIRED)
 include_directories(
   include
 )
@@ -65,6 +66,7 @@ ament_target_dependencies(decision_node
   tf2_ros
   OpenCV
   map_msgs
+  example_interfaces
 )
 ament_target_dependencies(refree_pub
   rclcpp
